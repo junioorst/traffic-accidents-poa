@@ -1,6 +1,4 @@
 import pandas as pd
-import json
-import os
 
 
 def extract_csv_data(file_path: str):
@@ -21,6 +19,8 @@ if __name__ == "__main__":
     # print(df_acidentes.isnull().sum())
 
     print(df_acidentes.dtypes)
+    
+    print("\nNúmero de valores nulos por coluna:")
     print(df_acidentes.isnull().sum())
 
     print("\nVALORES DA COLUNA 'UPS':")
