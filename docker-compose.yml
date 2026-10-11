@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: pg-acidentes
+    environment:
+      POSTGRES_USER: junior
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: acidentes
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-dados:/var/lib/postgresql/data
+volumes:
+  pg-dados:
+
+
