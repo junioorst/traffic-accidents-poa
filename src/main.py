@@ -10,5 +10,4 @@ if __name__ == "__main__":
     db_engine = create_db_engine()
     load_data(transformed_data, db_engine)
 
-    query = pd.read_sql("SELECT COUNT(*) FROM acidentes", db_engine)
-    print(query)
+    print(pd.read_sql("SELECT COUNT(*) FROM acidentes WHERE hora IS NULL", db_engine))
