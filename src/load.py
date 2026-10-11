@@ -2,7 +2,7 @@ import os
 import pandas as pd
 
 from dotenv import load_dotenv
-from sqlalchemy import Engine, create_engine
+from sqlalchemy import Engine, Time, create_engine
 
 
 def create_db_engine() -> Engine:
@@ -21,7 +21,9 @@ def create_db_engine() -> Engine:
 
 
 def load_data(df: pd.DataFrame, engine: Engine) -> None:
-    df.to_sql("acidentes", engine, if_exists="replace", index=False)
+    df.to_sql(
+        "acidentes", engine, if_exists="replace", index=False, dtype={"hora": Time()}
+    )
 
 
 if __name__ == "__main__":
