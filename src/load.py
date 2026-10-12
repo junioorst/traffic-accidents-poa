@@ -20,10 +20,10 @@ def create_db_engine() -> Engine:
     return engine
 
 
-def load_data(df: pd.DataFrame, engine: Engine) -> None:
-    df.to_sql(
-        "acidentes", engine, if_exists="replace", index=False, dtype={"hora": Time()}
-    )
+def load_data(
+    df: pd.DataFrame, table_name: str, engine: Engine, dtype: dict | None = None
+) -> None:
+    df.to_sql(table_name, engine, if_exists="replace", index=False, dtype=dtype)
 
 
 if __name__ == "__main__":
