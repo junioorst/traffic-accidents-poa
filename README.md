@@ -42,8 +42,8 @@ This project is being built incrementally as a modern data engineering portfolio
 
 Open data published by EPTC (Porto Alegre's traffic authority) through the city's open data portal:
 
-- **Acidentes** (accidents): one row per traffic accident
-- **Vítimas** (victims): one row per person involved in an accident with injuries or fatalities
+- [**Acidentes**](https://dadosabertos.poa.br/dataset/acidentes-de-transito-acidentes) (accidents): one row per traffic accident
+- [**Vítimas**](https://dadosabertos.poa.br/dataset/acidentes-de-transito-vitimas) (victims): one row per person involved in an accident with injuries or fatalities
 
 Official data dictionaries are available in the `docs/` folder.
 
