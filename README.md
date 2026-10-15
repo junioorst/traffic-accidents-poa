@@ -156,7 +156,7 @@ ORDER BY victims DESC;
 - [x] Extraction, transformation and loading with Pandas
 - [x] PostgreSQL with Docker Compose
 - [x] Normalized accidents and victims model
-- [ ] Unit tests for transformations with Pytest
+- [x] Unit tests for transformations with Pytest
 - [ ] dbt models (staging and marts) with data tests (uniqueness, not null, referential integrity)
 - [ ] Orchestration with Apache Airflow
 - [ ] BI dashboard (Metabase or Streamlit)
