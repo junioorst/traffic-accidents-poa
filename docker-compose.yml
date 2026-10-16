@@ -10,7 +10,19 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - pg-dados:/var/lib/postgresql/data
+  metabase:
+    image: metabase/metabase:latest
+    container_name: metabase
+    ports:
+      - "${METABASE_PORT}:3000"
+    volumes:
+      - metabase-dados:/metabase-data
+    environment:
+      MD_DB_FILE: /metabase-data/metabase.db
+    depends_on:
+      - postgres
 volumes:
   pg-dados:
+  metabase-dados:
 
 
