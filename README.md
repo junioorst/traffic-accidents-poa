@@ -211,6 +211,6 @@ ORDER BY victims DESC;
 - [x] PostgreSQL with Docker Compose
 - [x] Normalized accidents and victims model
 - [x] Unit tests for transformations with Pytest
-- [ ] BI dashboard with Metabase
+- [x] BI dashboard with Metabase
 - [ ] dbt models (staging and marts) with data tests (uniqueness, not null, referential integrity)
 - [ ] Orchestration with Apache Airflow
