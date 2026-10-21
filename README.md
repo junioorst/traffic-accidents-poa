@@ -23,23 +23,22 @@ Built with **Metabase**, running as a container alongside PostgreSQL, and readin
 
 ## 🏗️ Architecture
 
-```
-                     Apache Airflow (monthly schedule)
- ┌──────────────────────────────────────────────────────────────────┐
- │                                                                  │
- │  wait_for_update ──▶ download_csvs ──▶ load_accidents ──┐        │
- │  (CKAN API sensor)   (open data portal) load_victims ───┼──▶ dbt_build
- │                                         (pandas)        │        │
- └─────────────────────────────────────────────────────────┼────────┘
-                                                           ▼
-                               ┌──────────────────────────────────────┐
-                               │  PostgreSQL (Docker Compose)         │
-                               │  public    (raw tables)              │
-                               │     ▼  dbt                           │
-                               │  analytics (staging views, marts)    │
-                               │     ▼                                │
-                               │  Metabase dashboard (port 3000)      │
-                               └──────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Airflow["Apache Airflow (monthly schedule)"]
+        A[wait_for_update<br/>CKAN API sensor] --> B[download_csvs]
+        B --> C[load_accidents]
+        B --> D[load_victims]
+        C --> E[dbt_build]
+        D --> E
+    end
+
+    B -. writes .-> F[(data/raw CSVs)]
+    C -. writes .-> G[(PostgreSQL<br/>public: raw tables)]
+    D -. writes .-> G
+    E -. builds .-> H[(PostgreSQL<br/>analytics: staging and marts)]
+    G --> H
+    H --> I[Metabase dashboard]
 ```
 
 ---
@@ -51,8 +50,8 @@ Built with **Metabase**, running as a container alongside PostgreSQL, and readin
 - **Pytest** for unit tests of the transformation logic
 - **PostgreSQL 16** as the database
 - **Apache Airflow 3** for orchestration and scheduling, running with LocalExecutor on a custom Docker image
-- **Docker & Docker Compose** to run PostgreSQL and Metabase in isolated, reproducible containers
 - **dbt Core** for in-database modeling, data tests and documentation
+- **Docker & Docker Compose** to run PostgreSQL, Metabase and Airflow in isolated, reproducible containers
 - **SQLAlchemy + psycopg** for the database connection
 - **python-dotenv** for credentials management
 - **Metabase** for the BI dashboard
@@ -115,8 +114,6 @@ Loading uses `TRUNCATE` and insert inside a single transaction, so dependent dbt
 
 ---
 
-
-
 ## 🔄 Transformations
 
 **Accidents**
@@ -154,13 +151,16 @@ Loading uses `TRUNCATE` and insert inside a single transaction, so dependent dbt
 
 ```
 traffic-accidents-poa/
-├── data/raw/              # Source CSV files
-├── docs/images/           # Dashboard and dbt lineage screenshots
+├── dags/
+│   └── traffic_accidents_pipeline.py   # Airflow DAG
+├── data/raw/              # Source CSV files (downloaded by the DAG)
+├── docs/images/           # Dashboard, dbt lineage and Airflow DAG screenshots
 ├── src/
+│   ├── source.py          # Queries the CKAN API and downloads the CSV files
 │   ├── extract.py         # Reads the CSV files
 │   ├── transform.py       # Cleans and normalizes both datasets
 │   ├── load.py            # Loads DataFrames into PostgreSQL
-│   └── main.py            # Orchestrates the full pipeline
+│   └── main.py            # Runs the pipeline without Airflow
 ├── tests/
 │   └── test_transform.py  # Unit tests for the transformations
 ├── acidentes_dbt/
@@ -168,9 +168,11 @@ traffic-accidents-poa/
 │   │   ├── staging/       # Source declarations and staging views
 │   │   └── marts/         # Final tables and their tests
 │   ├── tests/             # Custom data tests
+│   ├── profiles/          # dbt profile used inside Airflow (reads environment variables)
 │   └── dbt_project.yml    # dbt project configuration
-├── docker-compose.yml     # PostgreSQL and Metabase services
-├── .env.example           # Template for database credentials
+├── Dockerfile             # Custom Airflow image with pandas, psycopg and dbt
+├── docker-compose.yml     # PostgreSQL, Metabase and Airflow services
+├── .env.example           # Template for credentials and settings
 ├── pytest.ini
 └── requirements.txt
 ```
@@ -179,7 +181,7 @@ traffic-accidents-poa/
 
 ## ⚙️ How to Run
 
-**Prerequisites:** Docker and Docker Compose (on Windows, Docker Desktop with WSL2) and Python 3.12+
+**Prerequisites:** Docker and Docker Compose (on Windows, Docker Desktop with WSL2). Python 3.12+ is only needed to run the unit tests.
 
 1. **Clone the repository**
 
@@ -194,7 +196,7 @@ traffic-accidents-poa/
    cp .env.example .env
 ```
 
-   Fill in `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB` in the `.env` file.
+   Fill in `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB` in the `.env` file. On Linux, also set `AIRFLOW_UID` to the output of `id -u`, so files created by Airflow belong to your user.
 
 3. **Build the Airflow image and start all services**
 
@@ -203,21 +205,22 @@ traffic-accidents-poa/
    docker compose up -d
 ```
 
-   On Linux, add `AIRFLOW_UID=$(id -u)` to the `.env` file first, so files created by Airflow belong to your user.
-
 4. **Run the pipeline**
 
    Open `http://localhost:8080` (user `airflow`, password `airflow`), unpause the `traffic_accidents_pipeline` DAG and trigger it. It downloads the data, loads PostgreSQL and builds the dbt models.
 
-7. **Run the tests**
+5. **Run the unit tests**
 
 ```bash
+   python3 -m venv .venv          # On Windows: python -m venv .venv
+   source .venv/bin/activate      # On Windows: .venv\Scripts\activate
+   pip install -r requirements.txt
    pytest
 ```
 
-8. **Open the dashboard**
+6. **Open the dashboard**
 
-   Go to `http://localhost:3000`, create an admin account and add a PostgreSQL database with host **`postgres`** (the Docker Compose service name), port `5432` and the credentials from your `.env` file.
+   Go to `http://localhost:3000`, create an admin account and add a PostgreSQL database with host **`postgres`** (the Docker Compose service name), port `5432` and the credentials from your `.env` file. The analytics tables are in the `analytics` schema.
 
 ---
 
