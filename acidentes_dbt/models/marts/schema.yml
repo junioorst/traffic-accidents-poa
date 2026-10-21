@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: fct_acidentes
+    columns:
+      - name: idacidente
+        data_tests:
+          - unique
+          - not_null
+      - name: gravidade
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Danos materiais', 'Com feridos', 'Fatal']
+  - name: fct_vitimas
+    columns:
+      - name: id
+        data_tests:
+          - unique
+          - not_null
+      - name: idacidente
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('fct_acidentes')
+                field: idacidente
