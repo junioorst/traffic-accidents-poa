@@ -188,8 +188,8 @@ traffic-accidents-poa/
 4. **Create the virtual environment and install dependencies**
 
 ```bash
-   python -m venv .venv
-   source .venv/bin/activate   # On Windows: .venv\Scripts\activate
+   python3 -m venv .venv          # On Windows: python -m venv .venv
+   source .venv/bin/activate      # On Windows: .venv\Scripts\activate
    pip install -r requirements.txt
 ```
 
@@ -200,6 +200,8 @@ traffic-accidents-poa/
 ```
 
 6. **Build the dbt models**
+
+   The first time, create the dbt connection profile by running `dbt init` inside the `acidentes_dbt` folder, or create it manually at `~/.dbt/profiles.yml` (on Windows: `%USERPROFILE%\.dbt\profiles.yml`) with the same credentials from your `.env` file and `schema: analytics`. Then:
 
 ```bash
    cd acidentes_dbt
