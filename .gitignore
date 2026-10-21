@@ -5,3 +5,6 @@ __pycache__/
 .env
 logs/
 metabase-backup/
+config/
+plugins/
+airflow-oficial.yaml
