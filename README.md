@@ -85,6 +85,7 @@ The victims dataset originally repeated every accident attribute (location, date
    feridos, mortes ...      tipo_veic
    vehicle counts ...       periododia
 ```
+
 ---
 
 ## 🧱 dbt Modeling
@@ -162,7 +163,7 @@ traffic-accidents-poa/
 
 ## ⚙️ How to Run
 
-**Prerequisites:** Docker, Docker Compose and Python 3.12+
+**Prerequisites:** Docker and Docker Compose (on Windows, Docker Desktop with WSL2) and Python 3.12+
 
 1. **Clone the repository**
 
@@ -201,15 +202,13 @@ traffic-accidents-poa/
 
 6. **Build the dbt models**
 
-   The first time, create the dbt connection profile by running `dbt init` inside the `acidentes_dbt` folder, or create it manually at `~/.dbt/profiles.yml` (on Windows: `%USERPROFILE%\.dbt\profiles.yml`) with the same credentials from your `.env` file and `schema: analytics`. Then:
+   The first time, create the dbt connection profile by running `dbt init` inside the `acidentes_dbt` folder, or create it manually at `~/.dbt/profiles.yml` (on Windows: `%USERPROFILE%\.dbt\profiles.yml`) with the same credentials from your `.env` file and `schema: analytics` (see the [dbt docs on profiles](https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles)). Then:
 
 ```bash
    cd acidentes_dbt
    dbt build
    cd ..
 ```
-
-   This requires a dbt profile pointing to the same database (see the [dbt docs on profiles](https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles)).
 
 7. **Run the tests**
 
@@ -245,3 +244,9 @@ ORDER BY victims DESC;
 - [x] BI dashboard with Metabase
 - [x] dbt models (staging and marts) with data tests
 - [ ] Orchestration with Apache Airflow
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
