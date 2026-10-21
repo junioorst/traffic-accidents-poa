@@ -2,7 +2,7 @@ import os
 import pandas as pd
 
 from dotenv import load_dotenv
-from sqlalchemy import Engine, Time, create_engine
+from sqlalchemy import Engine, create_engine, inspect, text
 
 
 def create_db_engine() -> Engine:
@@ -23,7 +23,12 @@ def create_db_engine() -> Engine:
 def load_data(
     df: pd.DataFrame, table_name: str, engine: Engine, dtype: dict | None = None
 ) -> None:
-    df.to_sql(table_name, engine, if_exists="replace", index=False, dtype=dtype)
+    if inspect(engine).has_table(table_name):
+        with engine.begin() as conn:
+            conn.execute(text(f'TRUNCATE TABLE "{table_name}"'))
+            df.to_sql(table_name, conn, if_exists="append", index=False, dtype=dtype)
+    else:
+        df.to_sql(table_name, engine, index=False, dtype=dtype)
 
 
 if __name__ == "__main__":
