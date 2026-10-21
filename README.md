@@ -2,7 +2,7 @@
 
 An end-to-end data pipeline that extracts, transforms and loads public traffic accident data from Porto Alegre (Brazil) into a containerized PostgreSQL database, modeling accidents and victims as two related tables, and serves the results through a BI dashboard.
 
-This project is being built incrementally as a modern data engineering portfolio. The next step is orchestration with Apache Airflow.
+The pipeline is orchestrated by **Apache Airflow**, which runs monthly, waits for the city to publish updated data, downloads it, reloads the database and rebuilds the dbt models automatically.
 
 ---
 
@@ -24,26 +24,22 @@ Built with **Metabase**, running as a container alongside PostgreSQL, and readin
 ## 🏗️ Architecture
 
 ```
- data/raw/*.csv
-      │
-      ▼
- ┌──────────┐    ┌────────────┐    ┌─────────────┐
- │ extract  │───▶│ transform  │───▶│    load     │
- │ (pandas) │    │ (pandas)   │    │ (SQLAlchemy)│
- └──────────┘    └─────┬──────┘    └──────┬──────┘
-                       │                  │
-                 tested with              ▼
-                   Pytest      ┌──────────────────────────────┐
-                               │  PostgreSQL (Docker Compose) │
-                               │                              │
-                               │  public    (raw tables)      │
-                               │     │                        │
-                               │     ▼  dbt build             │
-                               │  analytics (staging, marts)  │
-                               │     │                        │
-                               │     ▼                        │
-                               │  Metabase (port 3000)        │
-                               └──────────────────────────────┘
+                     Apache Airflow (monthly schedule)
+ ┌──────────────────────────────────────────────────────────────────┐
+ │                                                                  │
+ │  wait_for_update ──▶ download_csvs ──▶ load_accidents ──┐        │
+ │  (CKAN API sensor)   (open data portal) load_victims ───┼──▶ dbt_build
+ │                                         (pandas)        │        │
+ └─────────────────────────────────────────────────────────┼────────┘
+                                                           ▼
+                               ┌──────────────────────────────────────┐
+                               │  PostgreSQL (Docker Compose)         │
+                               │  public    (raw tables)              │
+                               │     ▼  dbt                           │
+                               │  analytics (staging views, marts)    │
+                               │     ▼                                │
+                               │  Metabase dashboard (port 3000)      │
+                               └──────────────────────────────────────┘
 ```
 
 ---
@@ -54,6 +50,7 @@ Built with **Metabase**, running as a container alongside PostgreSQL, and readin
 - **Pandas** for extraction and transformation
 - **Pytest** for unit tests of the transformation logic
 - **PostgreSQL 16** as the database
+- **Apache Airflow 3** for orchestration and scheduling, running with LocalExecutor on a custom Docker image
 - **Docker & Docker Compose** to run PostgreSQL and Metabase in isolated, reproducible containers
 - **dbt Core** for in-database modeling, data tests and documentation
 - **SQLAlchemy + psycopg** for the database connection
@@ -102,6 +99,23 @@ A single rule written once in staging propagates to every downstream table: filt
 ![dbt lineage graph](docs/images/dbt_lineage.png)
 
 ---
+
+## 🔁 Orchestration
+
+The whole pipeline runs as a single Airflow DAG, scheduled for the 2nd day of each month:
+
+- **`wait_for_update`**: a sensor that queries the open data portal's CKAN API and waits until both datasets have been updated in the current month, checking every 30 minutes for up to 5 days
+- **`download_csvs`**: downloads the CSV files, writing to a temporary file first so an interrupted download never corrupts existing data
+- **`load_accidents`** and **`load_victims`**: run in parallel, reusing the same extract, transform and load functions as the standalone pipeline
+- **`dbt_build`**: rebuilds the dbt models and runs all data tests
+
+Loading uses `TRUNCATE` and insert inside a single transaction, so dependent dbt views are preserved and a failed load never leaves an empty table.
+
+![Airflow DAG](docs/images/airflow_dag.png)
+
+---
+
+
 
 ## 🔄 Transformations
 
@@ -182,35 +196,18 @@ traffic-accidents-poa/
 
    Fill in `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB` in the `.env` file.
 
-3. **Start PostgreSQL and Metabase**
+3. **Build the Airflow image and start all services**
 
 ```bash
+   docker compose build
    docker compose up -d
 ```
 
-4. **Create the virtual environment and install dependencies**
+   On Linux, add `AIRFLOW_UID=$(id -u)` to the `.env` file first, so files created by Airflow belong to your user.
 
-```bash
-   python3 -m venv .venv          # On Windows: python -m venv .venv
-   source .venv/bin/activate      # On Windows: .venv\Scripts\activate
-   pip install -r requirements.txt
-```
+4. **Run the pipeline**
 
-5. **Run the pipeline**
-
-```bash
-   python src/main.py
-```
-
-6. **Build the dbt models**
-
-   The first time, create the dbt connection profile by running `dbt init` inside the `acidentes_dbt` folder, or create it manually at `~/.dbt/profiles.yml` (on Windows: `%USERPROFILE%\.dbt\profiles.yml`) with the same credentials from your `.env` file and `schema: analytics` (see the [dbt docs on profiles](https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles)). Then:
-
-```bash
-   cd acidentes_dbt
-   dbt build
-   cd ..
-```
+   Open `http://localhost:8080` (user `airflow`, password `airflow`), unpause the `traffic_accidents_pipeline` DAG and trigger it. It downloads the data, loads PostgreSQL and builds the dbt models.
 
 7. **Run the tests**
 
@@ -245,7 +242,7 @@ ORDER BY victims DESC;
 - [x] Unit tests for transformations with Pytest
 - [x] BI dashboard with Metabase
 - [x] dbt models (staging and marts) with data tests
-- [ ] Orchestration with Apache Airflow
+- [x] Orchestration with Apache Airflow
 
 ---
 
