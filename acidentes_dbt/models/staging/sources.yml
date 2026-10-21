@@ -1,0 +1,32 @@
+version: 2
+
+sources:
+  - name: raw                          
+    schema: public                    
+    tables:
+
+      - name: acidentes                
+        columns:
+          - name: idacidente
+            data_tests:               
+              - unique
+              - not_null
+          - name: ups
+            data_tests:                
+              - accepted_values:
+                  arguments:
+                    values: [1, 5, 13]
+                    quote: false
+
+      - name: vitimas                  
+        columns:
+          - name: id
+            data_tests:               
+              - unique
+              - not_null
+          - name: idacidente
+            data_tests:                
+              - relationships:
+                  arguments:
+                    to: source('raw', 'acidentes')
+                    field: idacidente

@@ -1,0 +1,72 @@
+version: 2
+
+models:
+  - name: fct_acidentes
+    description: "One row per traffic accident in Porto Alegre, excluding records with invalid future dates. Main source for the dashboard."
+    columns:
+      - name: idacidente
+        description: "Unique accident identifier, as published by EPTC."
+        data_tests:
+          - unique
+          - not_null
+      - name: data
+        description: "Date of the accident."
+      - name: hora
+        description: "Time of the accident. Null when not recorded."
+      - name: regiao
+        description: "City zone, following EPTC's enforcement zones (not administrative regions)."
+      - name: gravidade
+        description: "Accident severity derived from the UPS weight: property damage (1), injuries (5) or fatal (13)."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Danos materiais', 'Com feridos', 'Fatal']
+      - name: dia_sem
+        description: "Day of the week of the accident."
+      - name: log1
+        description: "Main street where the accident happened."
+      - name: tipo_acid
+        description: "Type of accident (e.g. side collision, frontal collision, run-over)."
+      - name: feridos
+        description: "Number of people injured in the accident."
+      - name: fatais
+        description: "Number of fatalities, including deaths within 30 days after the accident."
+
+  - name: fct_vitimas
+    description: "One row per victim, enriched with date, time and location of the corresponding accident. Excludes victims of accidents with invalid dates."
+    columns:
+      - name: id
+        description: "Unique victim identifier."
+        data_tests:
+          - unique
+          - not_null
+      - name: idacidente
+        description: "Accident identifier. Links each victim to fct_acidentes."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('fct_acidentes')
+                field: idacidente
+      - name: tipo_veic
+        description: "Vehicle the victim was in. Null when not recorded."
+      - name: idade
+        description: "Victim's age. Null when not recorded."
+      - name: fx_et
+        description: "Victim's age group. Null when age is not recorded."
+      - name: sexo
+        description: "Victim's sex. Null when not recorded."
+      - name: sit_vitima
+        description: "Victim's role in the accident: driver, passenger or pedestrian. Null when not recorded."
+      - name: periododia
+        description: "Period of the day: morning, afternoon, night or dawn."
+      - name: data
+        description: "Date of the corresponding accident."
+      - name: hora
+        description: "Time of the corresponding accident."
+      - name: dia_sem
+        description: "Day of the week of the corresponding accident."
+      - name: regiao
+        description: "City zone of the corresponding accident, following EPTC's enforcement zones."
+      - name: tipo_acid
+        description: "Type of the corresponding accident."
