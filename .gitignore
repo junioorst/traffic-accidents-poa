@@ -1,6 +1,7 @@
 venv/
+.venv/
 __pycache__/
 *.pyc
 .env
-metabase-backup/logs/
+logs/
 metabase-backup/
