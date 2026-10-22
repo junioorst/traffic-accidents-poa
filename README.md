@@ -23,23 +23,7 @@ Built with **Metabase**, running as a container alongside PostgreSQL, and readin
 
 ## 🏗️ Architecture
 
-```mermaid
-flowchart LR
-    subgraph Airflow["Apache Airflow (monthly schedule)"]
-        A[wait_for_update<br/>CKAN API sensor] --> B[download_csvs]
-        B --> C[load_accidents]
-        B --> D[load_victims]
-        C --> E[dbt_build]
-        D --> E
-    end
-
-    B -. writes .-> F[(data/raw CSVs)]
-    C -. writes .-> G[(PostgreSQL<br/>public: raw tables)]
-    D -. writes .-> G
-    E -. builds .-> H[(PostgreSQL<br/>analytics: staging and marts)]
-    G --> H
-    H --> I[Metabase dashboard]
-```
+![Pipeline architecture](docs/images/architecture.png)
 
 ---
 
